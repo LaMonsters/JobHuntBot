@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "OfferTrack 岗位采集助手",
+  "version": "1.1.0",
+  "description": "读取岗位页的公司、岗位、城市、岗位类型、投递链接、截止日期和 JD，可补充备注与简历版本名称后填入本地 OfferTrack。",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "action": { "default_title": "采集岗位到 OfferTrack", "default_popup": "popup.html" }
+}

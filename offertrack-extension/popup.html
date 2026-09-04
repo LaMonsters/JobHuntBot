@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OfferTrack 岗位采集</title><link rel="stylesheet" href="popup.css"><script src="extractor.js" defer></script><script src="fields.js" defer></script><script src="delivery.js" defer></script><script src="popup.js" defer></script></head>
+<body>
+  <header><span class="mark">↗</span><div><h1>Offer<span>Track</span></h1><p>把心仪岗位，带回工作台</p></div><span class="local">本地版</span></header>
+  <main>
+    <div class="intro"><strong>采集当前岗位</strong><p>打开单个岗位介绍页，即可读取岗位信息。</p></div>
+    <div class="read-actions"><button id="read" class="primary">读取当前页面</button><button id="selection">读取选中文字</button></div>
+    <p id="status" role="status" aria-live="polite">正在读取…</p>
+    <form id="preview" hidden>
+      <div class="preview-heading"><strong>岗位信息</strong><span id="method"></span></div>
+      <div class="grid">
+        <label>公司名称<input name="company" maxlength="80" placeholder="未识别，可补充"></label>
+        <label>岗位名称<input name="role" maxlength="100" placeholder="未识别，可补充"></label>
+        <label>城市<input name="city" maxlength="60" placeholder="北京 / 上海 / 深圳"></label>
+        <label>岗位类型<select name="jobType" id="job-type"></select></label>
+        <label>投递链接<input name="sourceUrl" type="url" maxlength="2000" placeholder="https://…"></label>
+        <label>截止日期<input name="deadline" type="date"><small>未填写默认招满为止</small></label>
+        <label class="full">岗位描述 JD <span id="jd-count"></span><textarea name="jd" maxlength="20000" rows="8" aria-label="岗位描述 JD" placeholder="岗位职责、任职要求、加分项…"></textarea></label>
+        <label class="full">备注<textarea name="notes" maxlength="2000" rows="3" placeholder="记录内推人、笔试时间、关注点等"></textarea></label>
+        <div class="full resume-field"><div class="resume-heading"><label for="resume-version">绑定简历版本</label><button type="button" id="add-resume" class="text-button">添加版本名称</button></div><select name="resumeVersion" id="resume-version"><option value="">暂无简历版本</option></select><div id="resume-editor" class="resume-editor" hidden><input id="resume-name" maxlength="100" aria-label="新简历版本名称" placeholder="例如：产品岗简历 V2"><button type="button" id="apply-resume">使用此版本</button></div><small>选择你准备使用的版本名称，随岗位一起导入。</small></div>
+      </div>
+      <details><summary>补充岗位信息</summary><div class="grid extra"><label class="full">招聘专业<textarea name="majors" maxlength="500" rows="2" placeholder="页面未注明时可留空"></textarea></label><label>学历要求<input name="education" maxlength="100"></label><label>薪资<input name="salary" maxlength="100"></label></div></details>
+      <div id="warnings" class="warnings"></div>
+      <p class="note">导入后默认“待投递”。投递日期、面试安排与下一步行动按你的实际进展填写。</p>
+      <button type="submit" id="send" class="primary wide">填入工作台的岗位信息 ↗</button>
+      <div class="secondary-actions"><button type="button" id="download">下载岗位文件</button><button type="button" id="restore">恢复上次采集</button></div>
+    </form>
+    <button id="restore-empty" hidden>恢复上次采集</button>
+    <details class="settings"><summary>工作台地址与使用帮助</summary><label>你平时打开的工作台地址<input id="dashboard-url" type="url" value="http://localhost:8420/dashboard.html" spellcheck="false"></label><button id="save-settings">保存地址</button><p>支持 localhost、127.0.0.1 或 file:///…/dashboard.html。保持与你现有记录的打开地址一致。</p><p>工作台未启动时，可先下载岗位文件，再在工作台点击“导入岗位”。最近一次采集会保留在此浏览器。</p></details>
+  </main><footer>点击时读取当前页 · 核对后再保存</footer>
+</body></html>
