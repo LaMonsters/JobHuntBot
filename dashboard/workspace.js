@@ -140,7 +140,7 @@ globalThis.OfferTrackWorkspace = (() => {
   }
   function formHistory(record) {
     const entries = record?.stageHistory || [];
-    $('record-stage-history').innerHTML = entries.length ? `<span class="field-label">阶段变更记录</span><ol class="stage-history">${entries.slice().reverse().map(entry => `<li><strong>${A.stages[entry.stage]}</strong><time datetime="${entry.at}">${new Date(entry.at).toLocaleString('zh-CN')}</time></li>`).join('')}</ol>` : '<small>保存后会记录阶段变化；已有岗位的历史不会被补造。</small>';
+    $('record-stage-history').innerHTML = entries.length ? `<ol class="stage-history">${entries.slice().reverse().map(entry => `<li><strong>${A.stages[entry.stage]}</strong><time datetime="${entry.at}">${new Date(entry.at).toLocaleString('zh-CN')}</time></li>`).join('')}</ol>` : '<small>后续的阶段变更和时间会保留在这里。</small>';
   }
   function exportCSV(records) {
     const columns = { company: '公司', role: '岗位', city: '城市', jobType: '岗位类型', stage: '当前阶段', appliedDate: '投递日期', deadline: '截止日期', eventTitle: '最近安排', eventAt: '安排时间', followUpDate: '跟进日期', nextAction: '下一步行动', resumeVersion: '绑定简历', tags: '标签', favorite: '收藏', matchScore: '手动匹配度', sourceUrl: '投递链接', jd: 'JD', notes: '备注', reviewNotes: '复盘记录' };

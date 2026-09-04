@@ -81,6 +81,7 @@ globalThis.OfferTrackResumes = (() => {
   function binding(value) {
     const match = filePattern.exec(value);
     if (!match) return { resumeId: '', resumeVersion: value };
+    if (currentBinding?.resumeId === match[1] && currentBinding.resumeVersion) return { ...currentBinding };
     const item = get(match[1]);
     if (item) return { resumeId: item.id, resumeVersion: item.name };
     if (currentBinding?.resumeId === match[1]) return { ...currentBinding };

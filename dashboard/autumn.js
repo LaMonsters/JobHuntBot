@@ -232,8 +232,14 @@
     if (name === 'resumes') OfferTrackResumes.open();
     if (!location.hash.startsWith('#offertrack-import=')) history.replaceState(null, '', '#' + name);
   }
-  function showDialog(id) { $(id).showModal(); document.body.classList.add('modal-open'); }
-  function closeDialog(id) { $(id).close(); document.body.classList.remove('modal-open'); }
+  const dialogFocus = new Map();
+  function showDialog(id) { dialogFocus.set(id, document.activeElement); $(id).showModal(); document.body.classList.add('modal-open'); }
+  function closeDialog(id) {
+    $(id).close(); document.body.classList.remove('modal-open');
+    const previous = dialogFocus.get(id);
+    const target = previous?.isConnected && previous.getClientRects().length ? previous : document.querySelector('.sidebar button[aria-current="page"]');
+    target?.focus({ preventScroll: true }); dialogFocus.delete(id);
+  }
   document.querySelectorAll('dialog').forEach(dialog => {
     dialog.addEventListener('close', () => { if (!document.querySelector('dialog[open]')) document.body.classList.remove('modal-open'); if (dialog.id === 'confirm-dialog') pendingConfirmation = null; });
     dialog.addEventListener('click', e => { if (e.target === dialog) { const rect = dialog.getBoundingClientRect(); if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) closeDialog(dialog.id); } });

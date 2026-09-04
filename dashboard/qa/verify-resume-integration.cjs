@@ -112,6 +112,13 @@ async function stop() {
     await page.getByRole('heading', { name: '研发 · 正式版', exact: true }).waitFor();
     const afterRename = await page.evaluate(() => JSON.parse(localStorage.getItem('jobhuntbot.offertrack.v1')).records);
     assert.equal(afterRename.find(row => row.id === created.id).resumeVersion, '研发工程师');
+    await page.locator('.sidebar [data-nav="applications"]').click();
+    await page.locator(`#jobs-body [data-edit="${created.id}"]`).click();
+    await page.locator('#field-notes').fill('重命名后修改备注也保留历史版本名称');
+    await page.locator('#record-form button[type="submit"]').click();
+    await page.locator('#record-dialog').waitFor({ state: 'hidden' });
+    assert.equal(await page.evaluate(id => JSON.parse(localStorage.getItem('jobhuntbot.offertrack.v1')).records.find(row => row.id === id).resumeVersion, created.id), '研发工程师');
+    await page.locator('[data-nav="resumes"]').click();
     passed('编辑岗位保留文件绑定，重命名简历不篡改历史投递的版本名称');
     if (await page.locator('#resume-dismiss').isVisible()) await page.locator('#resume-dismiss').click();
     await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
