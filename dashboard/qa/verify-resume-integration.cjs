@@ -77,7 +77,8 @@ async function stop() {
     const download = await downloadPromise;
     assert.equal(download.suggestedFilename(), technical.name); assert.equal(await download.failure(), null);
     passed('PDF 可查看和下载，文件名及字节完整');
-    await page.locator('[data-nav="applications"]').click();
+    await page.locator('.sidebar [data-nav="applications"]').click();
+    await page.locator('[data-job-view="table"]').click();
     assert.equal(await page.locator('#dashboard-content').isVisible(), true);
     await page.locator('[data-action="add"]').first().click();
     await page.locator('#field-company').fill('集成测试公司');
@@ -95,10 +96,11 @@ async function stop() {
     for (const original of initial) {
       const preserved = stored.find(row => row.id === original.id);
       for (const [key, value] of Object.entries(original)) assert.deepEqual(preserved[key], value);
-      for (const [key, value] of Object.entries(preserved)) if (!(key in original)) assert.equal(value, '');
+      const defaults = { favorite: false, matchScore: null, stageHistory: [] };
+      for (const [key, value] of Object.entries(preserved)) if (!(key in original)) assert.deepEqual(value, Object.hasOwn(defaults, key) ? defaults[key] : '');
     }
     passed('岗位能绑定真实 PDF 并从列表查看，原来的八条记录未被改动');
-    await page.locator(`[data-edit="${created.id}"]`).click();
+    await page.locator(`#jobs-body [data-edit="${created.id}"]`).click();
     assert.equal(await page.locator('#field-resume').inputValue(), `upload:${target.id}`);
     await page.locator('#field-notes').fill('修改其他字段保留绑定');
     await page.locator('#record-form button[type="submit"]').click();
@@ -127,8 +129,8 @@ async function stop() {
     assert.equal(afterDelete.length, 9); assert.equal(afterDelete.find(row => row.id === created.id).resumeVersion, '研发工程师');
     assert.equal((await fetch(`${base}/api/resumes/${target.id}/file`)).status, 404);
     passed('删除前确认，删除文件后仍保留岗位及历史版本名称');
-    await page.locator('[data-nav="applications"]').click();
-    await page.locator(`[data-edit="${created.id}"]`).click();
+    await page.locator('.sidebar [data-nav="applications"]').click();
+    await page.locator(`#jobs-body [data-edit="${created.id}"]`).click();
     await page.locator('#field-notes').fill('原文件删除后仍可编辑岗位');
     await page.locator('#record-form button[type="submit"]').click();
     await page.locator('#record-dialog').waitFor({ state: 'hidden' });
