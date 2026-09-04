@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在电脑上上传、查看和管理不同版本的求职简历。">
+  <title>简历管理 · 秋招工作台</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-case" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12a20 20 0 0 0 18 0M12 11v4"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M7 17H5a4 4 0 0 1-.9-7.9 8 8 0 0 1 15.5.5A4 4 0 0 1 19 17h-2M12 21V11m-4 4 4-4 4 4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v2M3 7v12a2 2 0 0 0 2 2h14l3-11H8L5 21"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m16 3 5 5M3 21l5-1L21 7a2.1 2.1 0 0 0-4-4L4 16z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+  </svg>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="秋招工作台首页"><span class="brand-icon"><svg><use href="#i-case"/></svg></span><span>秋招<span class="brand-blue">工作台</span></span></a>
+    <div class="nav-label">我的求职空间</div>
+    <nav aria-label="主导航"><a class="nav-item" href="/" aria-current="page"><svg><use href="#i-file"/></svg>简历管理<span class="nav-count" id="nav-count">0</span></a></nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span><span>本地简历库</span><svg><use href="#i-lock"/></svg></div>
+  </aside>
+  <main id="main">
+    <header class="page-header">
+      <div><p class="eyebrow">简历管理</p><h1>为不同投递方向准备不同版本</h1><p class="subtitle">把每一份简历，留给合适的机会。</p></div>
+      <button class="button primary" id="header-upload" type="button" disabled><svg><use href="#i-plus"/></svg>上传新简历</button>
+    </header>
+    <section class="upload-panel" id="dropzone" aria-labelledby="upload-heading">
+      <div class="upload-intro"><span class="upload-icon"><svg><use href="#i-upload"/></svg></span><div><h2 id="upload-heading">上传并管理简历文件</h2><p>将 PDF 拖到这里，或一次选择多份文件</p><button class="button primary" id="choose-files" type="button" disabled><svg><use href="#i-plus"/></svg>选择文件</button><span class="file-limit">每份不超过 20 MB</span></div></div>
+      <div class="upload-note"><span class="note-icon"><svg><use href="#i-check"/></svg></span><div><h3>已保存 <strong id="resume-count">0</strong> 份简历</h3><p>不同版本分别保存，随时查看和下载。<br>文件保存在电脑上，关闭页面也不会丢失。</p></div></div>
+      <input id="file-input" type="file" accept=".pdf,application/pdf" multiple hidden>
+    </section>
+    <section class="upload-status" id="upload-status" aria-label="上传进度" hidden><div class="progress-heading"><strong id="upload-summary" role="status" aria-live="polite"></strong><button class="text-button" id="dismiss-upload" type="button" hidden>收起</button></div><progress id="upload-progress" max="100" value="0"></progress><ul id="upload-results"></ul></section>
+    <div class="connection-error" id="connection-error" role="alert" hidden><span id="connection-message"></span><button class="text-button" id="retry" type="button">重新连接</button></div>
+    <section class="library" aria-labelledby="library-heading">
+      <div class="library-header"><div><h2 id="library-heading">我的简历 <span id="library-count">0</span></h2><p>按上传时间排列，最近的版本在前</p></div><span class="storage-label"><svg><use href="#i-folder"/></svg><span id="total-size">0 KB</span></span></div>
+      <div id="loading" class="loading" role="status">正在读取简历…</div>
+      <div id="empty-state" class="empty-state" hidden><span class="empty-icon"><svg><use href="#i-file"/></svg></span><h3>你的下一次机会，从一份简历开始</h3><p>上传第一份 PDF 简历，逐步建立自己的版本库。</p><button class="button secondary" id="empty-upload" type="button"><svg><use href="#i-plus"/></svg>上传第一份简历</button></div>
+      <div class="resume-grid" id="resume-grid"></div>
+    </section>
+    <footer>简历仅保存在本机 · 不会上传至 Offerbiu 或其他网站</footer>
+  </main>
+  <dialog id="rename-dialog" aria-labelledby="rename-heading"><form id="rename-form"><div class="dialog-icon"><svg><use href="#i-edit"/></svg></div><h2 id="rename-heading">重命名简历</h2><p>取个容易辨认的名字，例如「产品经理 · 秋招版」。</p><label for="resume-title">简历名称</label><input id="resume-title" name="title" maxlength="100" required autocomplete="off"><p class="form-error" id="rename-error" role="alert"></p><div class="dialog-actions"><button class="button secondary" type="button" id="cancel-rename">取消</button><button class="button primary" type="submit" id="save-rename">保存名称</button></div></form></dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-heading"><div class="dialog-icon danger-icon"><svg><use href="#i-trash"/></svg></div><h2 id="delete-heading">删除这份简历？</h2><p>“<strong id="delete-name"></strong>”将从简历库中删除。电脑上最初选择的原文件不受影响。</p><p class="form-error" id="delete-error" role="alert"></p><div class="dialog-actions"><button class="button secondary" type="button" id="cancel-delete">保留简历</button><button class="button danger" type="button" id="confirm-delete">确认删除</button></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

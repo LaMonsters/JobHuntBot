@@ -3,3 +3,5 @@ my-materials/
 Thumbs.db
 dashboard/.resume-data/
 dashboard/.playwright-cli/
+dashboard/qa/resume-integration/*.png
+dashboard/*.csv

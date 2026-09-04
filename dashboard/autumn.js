@@ -6,6 +6,7 @@
   const ENDED = new Set(['rejected', 'withdrawn']);
   const INTERVIEWS = new Set(['interview1', 'interview2', 'hr']);
   const ICONS = {
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h6"/>',
     briefcase: '<rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12a22 22 0 0 0 18 0M10 14h4"/>',
     grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2M14 15h2M8 18h2"/>',
@@ -71,6 +72,8 @@
     if (result.deadline && !validDate(result.deadline)) throw new Error('请填写有效的招聘截止日期。');
     if (!OfferTrackImport.validURL(result.sourceUrl)) throw new Error('岗位来源链接必须是 HTTP 或 HTTPS 网页。');
     result.isDemo = r.isDemo === true;
+    result.resumeId = r.resumeId ?? '';
+    if (typeof result.resumeId !== 'string' || (result.resumeId && !/^[0-9a-f-]{36}$/.test(result.resumeId))) throw new Error('绑定简历编号格式不正确。');
     return result;
   }
   function validateBackup(data) {
@@ -153,7 +156,7 @@
     const city = $('city-filter').value;
     $('city-filter').innerHTML = '<option value="">全部城市</option>' + [...new Set(records.map(r => r.city))].sort((a, b) => a.localeCompare(b, 'zh-CN')).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if ([...$('city-filter').options].some(o => o.value === city)) $('city-filter').value = city;
-    renderTable(); renderSchedule(); renderPipeline();
+    renderTable(); renderSchedule(); renderPipeline(); OfferTrackResumes.render();
   }
   function filteredRecords() {
     return records.filter(r => {
@@ -188,7 +191,7 @@
         }
         arrangement = `<span class="arrangement-title">${esc(r.eventTitle)}</span>${dateHtml}`;
       }
-      return `<tr data-record="${esc(r.id)}"><td><div class="company-cell"><span class="company-avatar tone-${tone}" aria-hidden="true">${esc([...r.company][0])}</span><span><span class="company-name">${esc(r.company)}</span><span class="role-name">${esc(r.role)}</span>${r.jd ? '<small class="jd-saved">已保存 JD</small>' : ''}</span></div></td><td class="cell-muted">${esc(r.city)}</td><td class="cell-muted" style="font-variant-numeric:tabular-nums">${esc(r.appliedDate.replaceAll('-', '/')) || '待投递'}</td><td><span class="stage-badge stage-${esc(r.stage)}">${STAGES[r.stage]}</span></td><td>${arrangement}</td><td><span class="next-action">${esc(r.nextAction) || '—'}</span></td><td class="actions-cell"><button class="icon-button" data-edit="${esc(r.id)}" title="编辑 ${esc(r.company)}" aria-label="编辑 ${esc(r.company)} ${esc(r.role)}">${icon('edit')}</button><button class="icon-button delete" data-delete="${esc(r.id)}" title="删除 ${esc(r.company)}" aria-label="删除 ${esc(r.company)} ${esc(r.role)}">${icon('trash')}</button></td></tr>`;
+      return `<tr data-record="${esc(r.id)}"><td><div class="company-cell"><span class="company-avatar tone-${tone}" aria-hidden="true">${esc([...r.company][0])}</span><span><span class="company-name">${esc(r.company)}</span><span class="role-name">${esc(r.role)}</span>${r.jd ? '<small class="jd-saved">已保存 JD</small>' : ''}${OfferTrackResumes.recordLink(r)}</span></div></td><td class="cell-muted">${esc(r.city)}</td><td class="cell-muted" style="font-variant-numeric:tabular-nums">${esc(r.appliedDate.replaceAll('-', '/')) || '待投递'}</td><td><span class="stage-badge stage-${esc(r.stage)}">${STAGES[r.stage]}</span></td><td>${arrangement}</td><td><span class="next-action">${esc(r.nextAction) || '—'}</span></td><td class="actions-cell"><button class="icon-button" data-edit="${esc(r.id)}" title="编辑 ${esc(r.company)}" aria-label="编辑 ${esc(r.company)} ${esc(r.role)}">${icon('edit')}</button><button class="icon-button delete" data-delete="${esc(r.id)}" title="删除 ${esc(r.company)}" aria-label="删除 ${esc(r.company)} ${esc(r.role)}">${icon('trash')}</button></td></tr>`;
     }).join('');
   }
   function renderSchedule() {
@@ -216,7 +219,13 @@
   }
   function scrollToSection(id) { $(id).scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }); }
   function resetFilters(nextFilter = 'all') { filter = nextFilter; query = ''; $('search').value = ''; $('city-filter').value = ''; $('stage-filter').value = ''; renderTable(); }
-  function setNav(name) { document.querySelectorAll('button[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === name); if (el.dataset.nav === name) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }); }
+  function setNav(name) {
+    document.querySelectorAll('button[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === name); if (el.dataset.nav === name) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
+    $('dashboard-content').hidden = name === 'resumes';
+    $('resume-manager').hidden = name !== 'resumes';
+    if (name === 'resumes') { OfferTrackResumes.open(); history.replaceState(null, '', '#resumes'); }
+    else if (location.hash === '#resumes') history.replaceState(null, '', location.pathname + location.search);
+  }
   function showDialog(id) { $(id).showModal(); document.body.classList.add('modal-open'); }
   function closeDialog(id) { $(id).close(); document.body.classList.remove('modal-open'); }
   document.querySelectorAll('dialog').forEach(dialog => {
@@ -237,6 +246,7 @@
     const values = existing || { appliedDate: '', stage: 'planned' };
     prepareJobSelects(values);
     for (const [key, value] of Object.entries(values)) if ($('record-form').elements.namedItem(key)) $('record-form').elements.namedItem(key).value = value;
+    OfferTrackResumes.refreshSelect(values);
     $('extra-job-fields').open = false;
     $('progress-fields').open = !!existing && existing.stage !== 'planned';
     syncJobFields();
@@ -263,6 +273,7 @@
       importingJob = true;
       prepareJobSelects(job);
       for (const [key, value] of Object.entries(job)) $('record-form').elements.namedItem(key).value = value;
+      OfferTrackResumes.refreshSelect(job);
       $('field-stage').value = 'planned';
       $('field-date').value = '';
       $('job-import-notice').hidden = false;
@@ -347,7 +358,7 @@
       const existing = records.find(r => r.id === editingId);
       if (editingId && (!existing || JSON.stringify(existing) !== editSnapshot)) throw new Error('这条记录已在其他窗口变化，请关闭表单后重新编辑。');
       const raw = Object.fromEntries(new FormData(e.currentTarget));
-      const record = validateRecord({ ...raw, id: editingId || uid(), isDemo: existing?.isDemo || false });
+      const record = validateRecord({ ...existing, ...raw, ...OfferTrackResumes.binding(raw.resumeVersion), id: editingId || uid(), isDemo: existing?.isDemo || false });
       if (importingJob && !$('allow-duplicate').checked && OfferTrackImport.duplicate(records, record)) {
         $('job-duplicate').hidden = false;
         throw new Error('这个岗位已有记录。请查看已有记录，或勾选“我确认要另外新增一条”。');
@@ -387,6 +398,7 @@
       if (nav === 'applications') { resetFilters(); scrollToSection('applications'); }
       if (nav === 'schedule') { selectedDay = ''; renderSchedule(); scrollToSection('schedule'); }
       if (nav === 'offers') { resetFilters('offer'); scrollToSection('applications'); }
+      if (nav === 'resumes') scrollToSection('main');
       return;
     }
     if (target.dataset.stat) {
@@ -419,5 +431,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
   setInterval(() => { if (!document.hidden) render(); }, 60000);
   initialize();
+  OfferTrackResumes.init({ getRecords: () => records, changed: render, toast, show: showDialog, close: closeDialog, icon });
+  if (location.hash === '#resumes') setNav('resumes');
   importFromHash();
 })();

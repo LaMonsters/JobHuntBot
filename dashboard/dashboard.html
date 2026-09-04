@@ -8,8 +8,10 @@
   <title>OfferTrack · 我的秋招工作台</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="autumn.css">
+  <link rel="stylesheet" href="resume-library.css">
   <script src="job-import.js" defer></script>
   <script src="job-fields.js" defer></script>
+  <script src="resume-library.js" defer></script>
   <script src="autumn.js" defer></script>
 </head>
 <body>
@@ -23,6 +25,7 @@
     <nav class="nav">
       <button class="active" data-nav="overview" aria-current="page" title="工作台"><i data-icon="grid"></i><span>工作台</span></button>
       <button data-nav="applications" title="我的投递"><i data-icon="briefcase"></i><span>我的投递</span><span class="nav-count" id="nav-total">0</span></button>
+      <button data-nav="resumes" title="简历管理"><i data-icon="file"></i><span>简历管理</span><span class="nav-count" id="resume-nav-count">0</span></button>
       <button data-nav="schedule" title="近期安排"><i data-icon="calendar"></i><span>近期安排</span></button>
       <button data-nav="offers" title="Offer 收获"><i data-icon="award"></i><span>Offer 收获</span></button>
     </nav>
@@ -44,6 +47,7 @@
       <div class="topbar-right"><span class="save-status" id="save-status"><span class="status-dot"></span><span id="save-label">本地保存</span></span><time id="today-label"></time></div>
     </header>
     <main class="content" id="main">
+      <div id="dashboard-content">
       <section class="page-heading" aria-labelledby="page-title">
         <div><p class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</p><div class="heading-title"><h1 id="page-title">我的秋招工作台</h1><span class="season-tag" id="season-tag">秋招季</span></div><p class="subtitle">记录每一次投递，掌握每一个机会。</p></div>
         <div class="heading-actions"><button class="button" data-action="import-job"><i data-icon="upload"></i>导入岗位</button><button class="button" data-action="export"><i data-icon="download"></i><span class="export-label">导出备份</span></button><button class="button primary" data-action="add"><i data-icon="plus"></i>新增投递</button></div>
@@ -85,7 +89,22 @@
         </section>
         <section class="panel" aria-labelledby="progress-title"><div class="section-header"><div><div class="section-title"><i data-icon="chart"></i><h2 id="progress-title">投递进度分布</h2></div><p class="section-description">看看机会都走到了哪一步。</p></div></div><div class="pipeline" id="pipeline"></div></section>
       </div>
-      <footer class="page-footer"><span>OfferTrack · 基于 JobHuntBot 的本地秋招工作台</span><span><button class="text-button" data-action="import" style="font-size:10px">导入备份</button> · <button class="text-button" data-action="help" style="font-size:10px">使用说明</button> · 数据保存在当前浏览器</span></footer>
+      </div>
+      <section id="resume-manager" aria-labelledby="resume-page-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">简历管理</p><div class="heading-title"><h1 id="resume-page-title">为不同投递方向准备不同版本</h1></div><p class="subtitle">上传多份简历，为每个岗位选择合适的版本。</p></div><button class="button primary" data-resume-upload disabled><i data-icon="plus"></i>上传新简历</button></div>
+        <section class="resume-upload-area" id="resume-dropzone" aria-label="上传 PDF 简历">
+          <div class="resume-upload-main"><span class="resume-upload-symbol"><i data-icon="upload"></i></span><div><h2>上传并管理简历文件</h2><p>拖拽 PDF 到这里，或一次选择多份文件。</p><button class="button primary" data-resume-upload disabled><i data-icon="plus"></i>选择文件</button><small>单份不超过 20 MB</small></div></div>
+          <div class="resume-upload-note"><i data-icon="shield"></i><div><strong>当前简历版本：<b id="resume-total">0</b> 份</strong><p>简历保存在工作台的本地文件夹中。<br>添加或编辑岗位时，可以直接选择绑定。</p></div></div>
+          <input id="resume-file-input" type="file" accept=".pdf,application/pdf" multiple hidden>
+        </section>
+        <div class="resume-service-error" id="resume-service-error" role="alert" hidden><span id="resume-service-message"></span><button class="text-button" id="resume-retry">重新连接</button></div>
+        <section class="resume-batch panel" id="resume-batch" hidden aria-label="上传结果"><div><strong id="resume-batch-summary" role="status" aria-live="polite"></strong><button id="resume-dismiss" class="text-button" hidden>收起</button></div><progress id="resume-progress" value="0" max="100"></progress><ul id="resume-batch-results"></ul></section>
+        <div class="resume-list-heading"><h2>我的简历 <span class="count-pill" id="resume-list-count">0</span></h2><span>最近上传的版本在前 · <span id="resume-total-size">0 KB</span></span></div>
+        <div class="resume-empty panel" id="resume-empty" hidden><i data-icon="file"></i><h3>还没有上传简历</h3><p>上传第一份 PDF，建立自己的简历版本库。</p><button class="button" data-resume-upload>上传第一份简历</button></div>
+        <div class="resume-cards" id="resume-cards"></div>
+        <p class="resume-storage-note">简历文件保存在本机，不发送到招聘网站。岗位记录会保留你绑定的简历版本名称。</p>
+      </section>
+      <footer class="page-footer"><span>OfferTrack · 基于 JobHuntBot 的本地秋招工作台</span><span><button class="text-button" data-action="import" style="font-size:10px">导入备份</button> · <button class="text-button" data-action="help" style="font-size:10px">使用说明</button> · 岗位保存在当前浏览器，简历保存在本机文件夹</span></footer>
     </main>
   </div>
   <dialog id="record-dialog" aria-labelledby="record-title">
@@ -103,7 +122,7 @@
         <label class="field"><span class="field-label">截止日期 <span class="optional">选填</span></span><input name="deadline" id="field-deadline" type="date"><small>未填写默认招满为止</small></label>
         <label class="field full"><span class="field-label">岗位描述 JD</span><textarea name="jd" id="field-jd" maxlength="20000" rows="8" placeholder="把招聘网站里的岗位职责、任职要求、加分项复制到这里，保留完整岗位描述。"></textarea></label>
         <label class="field full"><span class="field-label">备注</span><textarea name="notes" id="field-notes" maxlength="2000" rows="3" placeholder="记录内推人、笔试时间、提醒、关注点等"></textarea></label>
-        <div class="field full"><div class="field-label"><label for="field-resume">绑定简历版本</label><button type="button" class="text-button resume-add" id="add-resume">添加版本名称</button></div><select name="resumeVersion" id="field-resume" aria-label="绑定简历版本"><option value="">暂无简历版本</option></select><div id="resume-editor" class="resume-editor" hidden><input id="resume-name" maxlength="100" aria-label="新简历版本名称" placeholder="例如：产品岗简历 V2"><button type="button" class="button" id="apply-resume">使用此版本</button></div><small>记录本次投递所用的简历版本名称。</small></div>
+        <div class="field full"><div class="field-label"><label for="field-resume">绑定简历版本</label><button type="button" class="text-button resume-add" id="add-resume">添加版本名称</button></div><select name="resumeVersion" id="field-resume" aria-label="绑定简历版本"><option value="">暂无简历版本</option></select><div id="resume-editor" class="resume-editor" hidden><input id="resume-name" maxlength="100" aria-label="新简历版本名称" placeholder="例如：产品岗简历 V2"><button type="button" class="button" id="apply-resume">使用此版本</button></div><small id="resume-binding-hint">可选择已上传的 PDF；已有的版本名称仍可继续使用。</small><a id="resume-bound-link" target="_blank" rel="noopener" hidden>查看所选简历 ↗</a></div>
         <details id="extra-job-fields" class="job-form-details"><summary>补充岗位信息 <span>招聘专业、学历、薪资</span></summary><div class="form-grid">
           <label class="field full"><span class="field-label">招聘专业</span><textarea name="majors" id="field-majors" maxlength="500" placeholder="例如：计算机、软件工程等相关专业"></textarea></label>
           <label class="field"><span class="field-label">学历要求</span><input name="education" id="field-education" maxlength="100" placeholder="例如：本科及以上"></label>
@@ -123,6 +142,8 @@
   <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-heading"><div><h2 id="confirm-title">确认删除</h2></div><button class="icon-button" data-close="confirm-dialog" aria-label="关闭确认窗口"><i data-icon="x"></i></button></div><div class="dialog-body" id="confirm-message"></div><div class="dialog-footer"><button class="button" data-close="confirm-dialog">取消</button><button class="button danger" id="confirm-button">确认删除</button></div></dialog>
   <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-heading"><div><h2 id="help-title">使用说明</h2><p>简单记录，安心跟进。</p></div><button class="icon-button" data-close="help-dialog" aria-label="关闭使用说明"><i data-icon="x"></i></button></div><div class="dialog-body" style="color:#7c8ca5;font-size:13px;line-height:2"><p><strong style="color:#455b7b">1. 记录进展</strong><br>点击“新增投递”保存岗位信息，默认加入待投递。完成网申后展开“投递进度与安排”，更新阶段和投递日期。列表右侧的铅笔可编辑，垃圾桶可删除，删除后可短暂撤销。点击统计卡片或筛选项可快速查找记录。</p><p style="margin-top:16px"><strong style="color:#455b7b">2. 查看安排</strong><br>每条记录可保存一项最近安排，日期未确定时可只写名称。七天范围为今天 00:00 至第七天 23:59，已结束、已撤回的流程不计入安排。点选日历日期可筛选，再点一次显示整周。</p><p style="margin-top:16px"><strong style="color:#455b7b">3. 保存与备份</strong><br>数据自动保存在当前浏览器。请使用固定浏览器和打开方式；换浏览器、移动文件、改用 localhost 或清理浏览器数据后，可能需要导入备份。使用“导出备份”保存 JSON 文件，在“导入备份”中恢复。导入前会让你确认替换。</p><p style="margin-top:16px"><strong style="color:#455b7b">4. 示例与原有项目</strong><br>首次打开会显示 8 条虚构示例，可一键清空。基础版独立使用浏览器存储；原有 CSV 数据和旧版看板保留在项目中，可通过本地启动脚本访问 dashboard-legacy.html。</p></div><div class="dialog-footer"><button class="button primary" data-close="help-dialog">知道了</button></div></dialog>
   <input type="file" id="import-file" accept="application/json,.json" hidden>
+  <dialog id="resume-edit-dialog" class="confirm-dialog" aria-labelledby="resume-edit-title"><div class="dialog-heading"><div><h2 id="resume-edit-title">重命名简历</h2><p>给不同投递方向取一个好辨认的名称。</p></div><button class="icon-button" data-close="resume-edit-dialog" aria-label="关闭简历命名窗口"><i data-icon="x"></i></button></div><form id="resume-edit-form"><div class="dialog-body"><label class="field">简历名称<input id="resume-edit-name" required maxlength="100" autocomplete="off"></label><p class="form-error" id="resume-edit-error" role="alert" hidden></p></div><div class="dialog-footer"><button type="button" class="button" data-close="resume-edit-dialog">取消</button><button type="submit" class="button primary" id="resume-edit-save">保存名称</button></div></form></dialog>
+  <dialog id="resume-remove-dialog" class="confirm-dialog" aria-labelledby="resume-remove-title"><div class="dialog-heading"><h2 id="resume-remove-title">删除这份简历？</h2><button class="icon-button" data-close="resume-remove-dialog" aria-label="关闭简历删除窗口"><i data-icon="x"></i></button></div><div class="dialog-body"><p id="resume-remove-message"></p><p class="form-error" id="resume-remove-error" role="alert" hidden></p></div><div class="dialog-footer"><button type="button" class="button" data-close="resume-remove-dialog">保留简历</button><button class="button danger" id="resume-remove-confirm">确认删除</button></div></dialog>
   <input type="file" id="import-job-file" accept="application/json,.json" hidden>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <noscript><p style="padding:25px;margin-left:230px">请启用浏览器 JavaScript，以使用投递记录的新增、编辑和保存功能。</p></noscript>
