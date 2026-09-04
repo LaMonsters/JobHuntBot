@@ -74,7 +74,7 @@
     result.isDemo = r.isDemo === true;
     result.resumeId = r.resumeId ?? '';
     if (typeof result.resumeId !== 'string' || (result.resumeId && !/^[0-9a-f-]{36}$/.test(result.resumeId))) throw new Error('绑定简历编号格式不正确。');
-    return result;
+    return { ...result, ...OfferTrackWorkspace.validate(r) };
   }
   function validateBackup(data) {
     if (!data || data.version !== 1 || !Array.isArray(data.records) || data.records.length > 5000) throw new Error('请选择 OfferTrack 导出的 JSON 备份文件（最多 5000 条记录）。');
@@ -156,7 +156,7 @@
     const city = $('city-filter').value;
     $('city-filter').innerHTML = '<option value="">全部城市</option>' + [...new Set(records.map(r => r.city))].sort((a, b) => a.localeCompare(b, 'zh-CN')).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if ([...$('city-filter').options].some(o => o.value === city)) $('city-filter').value = city;
-    renderTable(); renderSchedule(); renderPipeline(); OfferTrackResumes.render();
+    renderTable(); renderSchedule(); renderPipeline(); OfferTrackResumes.render(); OfferTrackWorkspace.render(records);
   }
   function filteredRecords() {
     return records.filter(r => {
@@ -166,13 +166,15 @@
       if (filter === 'ended' && !ENDED.has(r.stage)) return false;
       if ($('city-filter').value && r.city !== $('city-filter').value) return false;
       if ($('stage-filter').value && r.stage !== $('stage-filter').value) return false;
-      const haystack = [r.company, r.role, r.city, r.jobType, r.majors, r.jd, r.notes, r.resumeVersion, r.eventTitle, r.nextAction, STAGES[r.stage]].join(' ').toLocaleLowerCase();
+      if (!OfferTrackWorkspace.matches(r)) return false;
+      const haystack = [r.company, r.role, r.city, r.jobType, r.majors, r.jd, r.notes, r.resumeVersion, r.tags, r.reviewNotes, r.eventTitle, r.nextAction, STAGES[r.stage]].join(' ').toLocaleLowerCase();
       return !query || haystack.includes(query);
     }).sort((a, b) => b.appliedDate.localeCompare(a.appliedDate));
   }
   function renderTable() {
     document.querySelectorAll('[data-filter]').forEach(el => { el.classList.toggle('active', el.dataset.filter === filter); el.setAttribute('aria-pressed', String(el.dataset.filter === filter)); });
     const visible = filteredRecords();
+    OfferTrackWorkspace.renderList(visible);
     $('list-count').textContent = `${records.length} 条记录`;
     $('results-label').textContent = `共 ${records.length} 条记录，当前显示 ${visible.length} 条 · 待投递不计入投递总数`;
     if (!visible.length) {
@@ -218,13 +220,17 @@
     $('pipeline').innerHTML = groups.map(([label, n]) => `<div class="pipeline-item"><span>${label}</span><div class="pipeline-track"><div class="pipeline-fill" style="width:${records.length ? n / records.length * 100 : 0}%"></div></div><b>${n}</b></div>`).join('') + `<p class="pipeline-note">${icon('info')}每条投递按当前阶段统计，进展实时更新。</p>`;
   }
   function scrollToSection(id) { $(id).scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }); }
-  function resetFilters(nextFilter = 'all') { filter = nextFilter; query = ''; $('search').value = ''; $('city-filter').value = ''; $('stage-filter').value = ''; renderTable(); }
+  function resetFilters(nextFilter = 'all') { filter = nextFilter; query = ''; $('search').value = ''; $('city-filter').value = ''; $('stage-filter').value = ''; OfferTrackWorkspace.resetQuick(); renderTable(); }
   function setNav(name) {
+    name = name === 'schedule' ? 'overview' : name === 'offers' ? 'applications' : name;
+    if (!['overview', 'applications', 'resumes', 'review'].includes(name)) name = 'overview';
     document.querySelectorAll('button[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === name); if (el.dataset.nav === name) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
-    $('dashboard-content').hidden = name === 'resumes';
+    $('dashboard-content').hidden = ['resumes', 'review'].includes(name);
     $('resume-manager').hidden = name !== 'resumes';
-    if (name === 'resumes') { OfferTrackResumes.open(); history.replaceState(null, '', '#resumes'); }
-    else if (location.hash === '#resumes') history.replaceState(null, '', location.pathname + location.search);
+    $('review-panel').hidden = name !== 'review';
+    OfferTrackWorkspace.navigate(name);
+    if (name === 'resumes') OfferTrackResumes.open();
+    if (!location.hash.startsWith('#offertrack-import=')) history.replaceState(null, '', '#' + name);
   }
   function showDialog(id) { $(id).showModal(); document.body.classList.add('modal-open'); }
   function closeDialog(id) { $(id).close(); document.body.classList.remove('modal-open'); }
@@ -245,8 +251,13 @@
     $('save-button-label').textContent = existing ? '保存修改' : '保存岗位';
     const values = existing || { appliedDate: '', stage: 'planned' };
     prepareJobSelects(values);
-    for (const [key, value] of Object.entries(values)) if ($('record-form').elements.namedItem(key)) $('record-form').elements.namedItem(key).value = value;
+    for (const [key, value] of Object.entries(values)) {
+      const field = $('record-form').elements.namedItem(key);
+      if (field?.type === 'checkbox') field.checked = value === true;
+      else if (field) field.value = value ?? '';
+    }
     OfferTrackResumes.refreshSelect(values);
+    OfferTrackWorkspace.formHistory(existing);
     $('extra-job-fields').open = false;
     $('progress-fields').open = !!existing && existing.stage !== 'planned';
     syncJobFields();
@@ -358,7 +369,9 @@
       const existing = records.find(r => r.id === editingId);
       if (editingId && (!existing || JSON.stringify(existing) !== editSnapshot)) throw new Error('这条记录已在其他窗口变化，请关闭表单后重新编辑。');
       const raw = Object.fromEntries(new FormData(e.currentTarget));
-      const record = validateRecord({ ...existing, ...raw, ...OfferTrackResumes.binding(raw.resumeVersion), id: editingId || uid(), isDemo: existing?.isDemo || false });
+      raw.favorite = $('field-favorite').checked;
+      raw.matchScore = raw.matchScore === '' ? null : Number(raw.matchScore);
+      const record = validateRecord(OfferTrackWorkspace.prepare({ ...existing, ...raw, ...OfferTrackResumes.binding(raw.resumeVersion), id: editingId || uid(), isDemo: existing?.isDemo || false }, existing));
       if (importingJob && !$('allow-duplicate').checked && OfferTrackImport.duplicate(records, record)) {
         $('job-duplicate').hidden = false;
         throw new Error('这个岗位已有记录。请查看已有记录，或勾选“我确认要另外新增一条”。');
@@ -366,7 +379,7 @@
       const next = editingId ? records.map(r => r.id === editingId ? record : r) : [...records, record];
       if (!saveRecords(next)) throw new Error($('storage-error').textContent);
       const wasEditing = !!editingId;
-      closeDialog('record-dialog'); resetFilters();
+      closeDialog('record-dialog'); resetFilters(); setNav('applications');
       toast(wasEditing ? '投递进展已更新' : record.stage === 'planned' ? '岗位已收藏，完成网申后可更新为已投递' : '已添加新投递，祝你收获好消息');
     } catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; }
   });
@@ -399,6 +412,7 @@
       if (nav === 'schedule') { selectedDay = ''; renderSchedule(); scrollToSection('schedule'); }
       if (nav === 'offers') { resetFilters('offer'); scrollToSection('applications'); }
       if (nav === 'resumes') scrollToSection('main');
+      if (nav === 'review') scrollToSection('main');
       return;
     }
     if (target.dataset.stat) {
@@ -409,6 +423,7 @@
     switch (target.dataset.action) {
       case 'add': openRecord(); break;
       case 'export': exportBackup(); break;
+      case 'export-csv': OfferTrackWorkspace.exportCSV(filteredRecords()); break;
       case 'import': $('import-file').click(); break;
       case 'import-job': $('import-job-file').click(); break;
       case 'help': showDialog('help-dialog'); break;
@@ -431,7 +446,8 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
   setInterval(() => { if (!document.hidden) render(); }, 60000);
   initialize();
+  OfferTrackWorkspace.init({ getRecords: () => records, saveRecords, validateRecord, renderTable, setNav, toast, show: showDialog, close: closeDialog, icon });
   OfferTrackResumes.init({ getRecords: () => records, changed: render, toast, show: showDialog, close: closeDialog, icon });
-  if (location.hash === '#resumes') setNav('resumes');
+  setNav(location.hash.slice(1));
   importFromHash();
 })();

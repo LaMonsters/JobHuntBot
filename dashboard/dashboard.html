@@ -9,12 +9,15 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="autumn.css">
   <link rel="stylesheet" href="resume-library.css">
+  <link rel="stylesheet" href="workspace.css">
   <script src="job-import.js" defer></script>
   <script src="job-fields.js" defer></script>
   <script src="resume-library.js" defer></script>
+  <script src="workspace-data.js" defer></script>
+  <script src="workspace.js" defer></script>
   <script src="autumn.js" defer></script>
 </head>
-<body>
+<body data-page="overview">
   <a class="skip-link" href="#main">跳到工作台</a>
   <aside class="sidebar" aria-label="主导航">
     <a class="brand" href="#" aria-label="OfferTrack 工作台" data-nav="overview">
@@ -23,15 +26,16 @@
     </a>
     <div class="nav-label">WORKSPACE / 工作空间</div>
     <nav class="nav">
-      <button class="active" data-nav="overview" aria-current="page" title="工作台"><i data-icon="grid"></i><span>工作台</span></button>
+      <button class="active" data-nav="overview" aria-current="page" title="总览"><i data-icon="grid"></i><span>总览</span></button>
       <button data-nav="applications" title="我的投递"><i data-icon="briefcase"></i><span>我的投递</span><span class="nav-count" id="nav-total">0</span></button>
+      <button data-action="add" title="添加岗位"><i data-icon="plus"></i><span>添加岗位</span></button>
       <button data-nav="resumes" title="简历管理"><i data-icon="file"></i><span>简历管理</span><span class="nav-count" id="resume-nav-count">0</span></button>
-      <button data-nav="schedule" title="近期安排"><i data-icon="calendar"></i><span>近期安排</span></button>
-      <button data-nav="offers" title="Offer 收获"><i data-icon="award"></i><span>Offer 收获</span></button>
+      <button data-nav="review" title="投递复盘"><i data-icon="chart"></i><span>投递复盘</span></button>
     </nav>
     <div class="sidebar-separator"></div>
     <div class="nav-label">TOOLS / 数据工具</div>
     <nav class="nav tools-nav" aria-label="数据工具">
+      <button data-nav="schedule" title="近期安排"><i data-icon="calendar"></i><span>近期安排</span></button>
       <button data-action="import-job" title="导入插件采集的岗位文件"><i data-icon="plus"></i><span>导入岗位</span></button>
       <button data-action="import" title="导入备份"><i data-icon="upload"></i><span>导入备份</span></button>
       <button data-action="help" title="使用说明"><i data-icon="help"></i><span>使用说明</span></button>
@@ -50,7 +54,7 @@
       <div id="dashboard-content">
       <section class="page-heading" aria-labelledby="page-title">
         <div><p class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</p><div class="heading-title"><h1 id="page-title">我的秋招工作台</h1><span class="season-tag" id="season-tag">秋招季</span></div><p class="subtitle">记录每一次投递，掌握每一个机会。</p></div>
-        <div class="heading-actions"><button class="button" data-action="import-job"><i data-icon="upload"></i>导入岗位</button><button class="button" data-action="export"><i data-icon="download"></i><span class="export-label">导出备份</span></button><button class="button primary" data-action="add"><i data-icon="plus"></i>新增投递</button></div>
+        <div class="heading-actions"><button class="button" data-action="export-csv"><i data-icon="download"></i>导出投递记录</button><button class="button" data-action="export"><i data-icon="download"></i><span class="export-label">导出备份</span></button><button class="button primary" data-action="add"><i data-icon="plus"></i>添加岗位</button></div>
       </section>
       <section class="stats" aria-label="投递概览">
         <button class="stat-card" data-stat="all" title="查看所有投递"><div class="stat-top">投递总数<span class="stat-icon"><i data-icon="briefcase"></i></span></div><div class="stat-value"><strong id="stat-total">0</strong><span>份投递</span></div><p class="stat-note">每一次投递，都是新的可能</p></button>
@@ -60,6 +64,13 @@
       </section>
       <div class="storage-error" id="storage-error" role="alert" hidden></div>
       <div class="demo-banner" id="demo-banner" hidden><i data-icon="info"></i><span id="demo-text"></span><button class="text-button" data-action="clear-demo">清空示例</button></div>
+      <section class="overview-only overview-summary" aria-label="岗位总量"><span>总岗位数 <b id="overview-total-jobs">0</b></span><span>待投递 <b id="overview-planned">0</b></span><span>面试中 <b id="overview-interviews">0</b></span><button class="text-button" data-nav="applications">查看全部岗位 ↗</button></section>
+      <div class="overview-only overview-grid">
+        <section class="panel"><div class="section-header"><div><h2>本周投递趋势</h2><p class="section-description">按实际记录的投递日期统计</p></div><span class="count-pill" id="overview-week-count">0 个</span></div><div class="week-bars" id="overview-trend" aria-label="本周各日投递量"></div></section>
+        <section class="panel"><div class="section-header"><div><h2>3 天内截止</h2><p class="section-description">今天及后两天截止的待投递岗位</p></div><span class="count-pill" id="overview-deadline-count">0 个</span></div><div class="action-list" id="overview-deadlines"></div></section>
+        <section class="panel"><div class="section-header"><div><h2>今日待办</h2><p class="section-description">截止、今日安排与到期跟进</p></div><span class="count-pill" id="overview-todo-count">0 项</span></div><div class="action-list" id="overview-todos"></div></section>
+        <section class="panel"><div class="section-header"><div><h2>下一步行动</h2><p class="section-description">根据已记录的岗位和安排整理</p></div></div><ul class="action-suggestions" id="overview-suggestions"></ul></section>
+      </div>
       <section class="panel applications-panel" id="applications" aria-labelledby="applications-title">
         <div class="section-header"><div><div class="section-title"><h2 id="applications-title">我的投递</h2><span class="count-pill" id="list-count">0 条记录</span></div><p class="section-description">从投递到 Offer，让每一步进展都有迹可循。</p></div><button class="text-button" data-action="add">＋ 添加记录</button></div>
         <div class="table-controls">
@@ -71,12 +82,15 @@
             <button class="tab" data-filter="ended" aria-pressed="false">已结束<span id="tab-ended">0</span></button>
           </div>
           <div class="filters">
-            <label class="search-box"><i data-icon="search"></i><input id="search" type="search" placeholder="搜索公司、岗位或行动…" aria-label="搜索公司、岗位或行动"></label>
+            <label class="search-box"><i data-icon="search"></i><input id="search" type="search" placeholder="搜索公司、岗位、城市、标签、绑定简历、备注或 JD" aria-label="搜索公司、岗位、城市、标签、绑定简历、备注或 JD"></label>
             <select class="filter-select" id="city-filter" aria-label="按城市筛选"><option value="">全部城市</option></select>
             <select class="filter-select" id="stage-filter" aria-label="按阶段筛选"><option value="">全部阶段</option></select>
           </div>
         </div>
-        <div class="table-wrap" tabindex="0" role="region" aria-label="投递记录，可左右滚动">
+        <div class="job-quickbar"><div class="quick-filters" role="group" aria-label="快捷筛选"><span>快速筛选</span><button data-quick="all" class="active" aria-pressed="true">全部</button><button data-quick="favorite" aria-pressed="false">已收藏</button><button data-quick="matched" aria-pressed="false" title="已手动记录匹配度的岗位">已匹配</button><button data-quick="deadline" aria-pressed="false">3 天内截止</button><button data-quick="high" aria-pressed="false" title="手动匹配度至少 80 分">高匹配度</button><button data-quick="resume" aria-pressed="false">已绑定简历</button><button data-quick="unscheduled" aria-pressed="false">未设置时间</button></div><div class="view-switch" role="group" aria-label="投递视图"><button data-job-view="board">卡片视图</button><button data-job-view="table">表格视图</button></div></div>
+        <div class="board-toolbar" id="board-toolbar"><span>拖动卡片，或在卡片内选择新阶段</span><div><button class="button" id="board-prev" aria-label="向左查看投递阶段">‹</button><button class="button" id="board-next" aria-label="向右查看投递阶段">›</button></div></div>
+        <div class="job-board" id="job-board" tabindex="0" aria-label="按阶段排列的投递看板"></div>
+        <div class="table-wrap" id="application-table" tabindex="0" role="region" aria-label="投递记录，可左右滚动">
           <table class="jobs-table"><thead><tr><th scope="col">公司 / 岗位</th><th scope="col">城市</th><th scope="col">投递日期</th><th scope="col">当前阶段</th><th scope="col">最近安排</th><th scope="col">下一步行动</th><th scope="col">操作</th></tr></thead><tbody id="jobs-body"></tbody></table>
         </div>
         <div class="table-footer"><span id="results-label" aria-live="polite"></span><span class="footer-tip"><i data-icon="check-circle"></i>每一次修改都会自动保存</span></div>
@@ -89,6 +103,7 @@
         </section>
         <section class="panel" aria-labelledby="progress-title"><div class="section-header"><div><div class="section-title"><i data-icon="chart"></i><h2 id="progress-title">投递进度分布</h2></div><p class="section-description">看看机会都走到了哪一步。</p></div></div><div class="pipeline" id="pipeline"></div></section>
       </div>
+      <section class="overview-only panel month-panel" aria-labelledby="month-calendar-title"><div class="section-header"><div><h2 id="month-calendar-title">投递台历</h2><p class="section-description">投递、截止、笔面安排、跟进和结果</p></div><div class="month-navigation"><button class="icon-button" id="calendar-prev" aria-label="上个月">‹</button><strong id="calendar-month"></strong><button class="icon-button" id="calendar-next" aria-label="下个月">›</button><button class="text-button" id="calendar-today">本月</button></div></div><div class="calendar-weekdays" aria-hidden="true"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div><div class="month-calendar" id="month-calendar"></div><div class="calendar-detail"><strong id="calendar-selection"></strong><div id="calendar-events" class="action-list"></div></div></section>
       </div>
       <section id="resume-manager" aria-labelledby="resume-page-title" hidden>
         <div class="page-heading"><div><p class="eyebrow">简历管理</p><div class="heading-title"><h1 id="resume-page-title">为不同投递方向准备不同版本</h1></div><p class="subtitle">上传多份简历，为每个岗位选择合适的版本。</p></div><button class="button primary" data-resume-upload disabled><i data-icon="plus"></i>上传新简历</button></div>
@@ -103,6 +118,13 @@
         <div class="resume-empty panel" id="resume-empty" hidden><i data-icon="file"></i><h3>还没有上传简历</h3><p>上传第一份 PDF，建立自己的简历版本库。</p><button class="button" data-resume-upload>上传第一份简历</button></div>
         <div class="resume-cards" id="resume-cards"></div>
         <p class="resume-storage-note">简历文件保存在本机，不发送到招聘网站。岗位记录会保留你绑定的简历版本名称。</p>
+      </section>
+      <section id="review-panel" aria-labelledby="review-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">投递复盘</p><div class="heading-title"><h1 id="review-title">每周回顾，把下一步安排清楚</h1></div><p class="subtitle">从投递节奏、阶段进展与面试记录中，找到需要跟进的机会。</p></div><button class="button" data-nav="applications">回到我的投递 ↗</button></div>
+        <div class="review-week-picker"><button class="button" id="review-prev" aria-label="上一周">‹</button><strong id="review-week-label"></strong><button class="button" id="review-next" aria-label="下一周">›</button><button class="text-button" id="review-this-week">回到本周</button></div>
+        <div class="review-stats"><article class="panel"><p>本周投递数量</p><strong id="review-submitted">0</strong><small>按所选周的投递日期统计</small></article><article class="panel"><p>本周笔面安排</p><strong id="review-appointments">0</strong><small>每个岗位保存的最近一次笔面安排</small></article><article class="panel"><p>累计推进率</p><strong id="review-progression">0%</strong><small>已进入过笔试、面试或 Offer 的已投递岗位占比</small></article></div>
+        <div class="overview-grid"><section class="panel"><div class="section-header"><div><h2>本周投递节奏</h2><p class="section-description">点击周切换查看不同时间段</p></div></div><div class="week-bars" id="review-trend"></div></section><section class="panel"><div class="section-header"><h2>阶段分布</h2></div><div id="review-stages" class="review-stage-list"></div></section><section class="panel"><div class="section-header"><h2>近期需要优先处理</h2></div><div class="action-list" id="review-priority"></div></section><section class="panel"><div class="section-header"><h2>近期笔面安排</h2></div><div class="action-list" id="review-upcoming"></div></section><section class="panel"><div class="section-header"><div><h2>长时间没进展</h2><p class="section-description">至少 14 天没有新的阶段进展</p></div></div><div class="action-list" id="review-stalled"></div></section><section class="panel"><div class="section-header"><h2>接下来一周的行动建议</h2></div><ul class="action-suggestions" id="review-suggestions"></ul></section></div>
+        <section class="panel review-notes-panel"><div class="section-header"><div><h2>我的复盘记录</h2><p class="section-description">在岗位编辑中记录面试经验、结果原因和下次改进</p></div></div><div id="review-notes"></div></section>
       </section>
       <footer class="page-footer"><span>OfferTrack · 基于 JobHuntBot 的本地秋招工作台</span><span><button class="text-button" data-action="import" style="font-size:10px">导入备份</button> · <button class="text-button" data-action="help" style="font-size:10px">使用说明</button> · 岗位保存在当前浏览器，简历保存在本机文件夹</span></footer>
     </main>
@@ -127,6 +149,9 @@
           <label class="field full"><span class="field-label">招聘专业</span><textarea name="majors" id="field-majors" maxlength="500" placeholder="例如：计算机、软件工程等相关专业"></textarea></label>
           <label class="field"><span class="field-label">学历要求</span><input name="education" id="field-education" maxlength="100" placeholder="例如：本科及以上"></label>
           <label class="field"><span class="field-label">薪资</span><input name="salary" id="field-salary" maxlength="100" placeholder="以招聘页面为准"></label>
+          <label class="field"><span class="field-label">标签</span><input name="tags" id="field-tags" maxlength="200" placeholder="例如：重点目标、内推、国企"></label>
+          <label class="field"><span class="field-label">匹配度（手动记录）</span><input name="matchScore" id="field-match-score" type="number" min="0" max="100" step="1" placeholder="0–100，选填"><small>不填写时不算已匹配；80 分及以上为高匹配度。</small></label>
+          <label class="field full favorite-field"><span><input name="favorite" id="field-favorite" type="checkbox"> 收藏这个岗位</span></label>
         </div></details>
         <details id="progress-fields" class="job-form-details"><summary>投递进度与安排 <span id="progress-summary">待投递</span></summary><div class="form-grid">
           <label class="field"><span class="field-label">当前阶段 <em>*</em></span><select name="stage" id="field-stage" required></select></label>
@@ -134,6 +159,9 @@
           <label class="field"><span class="field-label">最近安排</span><input name="eventTitle" id="field-event" maxlength="120" placeholder="例如：技术一面 / 线上笔试"></label>
           <label class="field"><span class="field-label">安排时间</span><input name="eventAt" id="field-event-at" type="datetime-local"><small>填写后将自动计入七天内的安排。</small></label>
           <label class="field full"><span class="field-label">下一步行动</span><textarea name="nextAction" id="field-action" maxlength="500" placeholder="例如：准备自我介绍，复习项目难点"></textarea></label>
+          <label class="field"><span class="field-label">计划跟进日期</span><input name="followUpDate" id="field-follow-up" type="date"><small>到期后会出现在总览的今日待办中。</small></label>
+          <label class="field full"><span class="field-label">个人复盘</span><textarea name="reviewNotes" id="field-review-notes" maxlength="6000" rows="4" placeholder="记录面试问题、反馈、结果原因与下次改进"></textarea><small>保存后会汇总到投递复盘页面。</small></label>
+          <div class="field full"><span class="field-label">阶段记录</span><div id="record-stage-history" class="record-stage-history"></div></div>
         </div></details>
       </div><p id="form-error" class="form-error" role="alert" hidden></p></div>
       <div class="dialog-footer"><small><em>*</em> 为必填项 · 核对后保存</small><button type="button" class="button" data-close="record-dialog">取消</button><button class="button primary" type="submit"><i data-icon="check"></i><span id="save-button-label">保存岗位</span></button></div>
@@ -142,6 +170,7 @@
   <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-heading"><div><h2 id="confirm-title">确认删除</h2></div><button class="icon-button" data-close="confirm-dialog" aria-label="关闭确认窗口"><i data-icon="x"></i></button></div><div class="dialog-body" id="confirm-message"></div><div class="dialog-footer"><button class="button" data-close="confirm-dialog">取消</button><button class="button danger" id="confirm-button">确认删除</button></div></dialog>
   <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-heading"><div><h2 id="help-title">使用说明</h2><p>简单记录，安心跟进。</p></div><button class="icon-button" data-close="help-dialog" aria-label="关闭使用说明"><i data-icon="x"></i></button></div><div class="dialog-body" style="color:#7c8ca5;font-size:13px;line-height:2"><p><strong style="color:#455b7b">1. 记录进展</strong><br>点击“新增投递”保存岗位信息，默认加入待投递。完成网申后展开“投递进度与安排”，更新阶段和投递日期。列表右侧的铅笔可编辑，垃圾桶可删除，删除后可短暂撤销。点击统计卡片或筛选项可快速查找记录。</p><p style="margin-top:16px"><strong style="color:#455b7b">2. 查看安排</strong><br>每条记录可保存一项最近安排，日期未确定时可只写名称。七天范围为今天 00:00 至第七天 23:59，已结束、已撤回的流程不计入安排。点选日历日期可筛选，再点一次显示整周。</p><p style="margin-top:16px"><strong style="color:#455b7b">3. 保存与备份</strong><br>数据自动保存在当前浏览器。请使用固定浏览器和打开方式；换浏览器、移动文件、改用 localhost 或清理浏览器数据后，可能需要导入备份。使用“导出备份”保存 JSON 文件，在“导入备份”中恢复。导入前会让你确认替换。</p><p style="margin-top:16px"><strong style="color:#455b7b">4. 示例与原有项目</strong><br>首次打开会显示 8 条虚构示例，可一键清空。基础版独立使用浏览器存储；原有 CSV 数据和旧版看板保留在项目中，可通过本地启动脚本访问 dashboard-legacy.html。</p></div><div class="dialog-footer"><button class="button primary" data-close="help-dialog">知道了</button></div></dialog>
   <input type="file" id="import-file" accept="application/json,.json" hidden>
+  <dialog id="stage-label-dialog" class="confirm-dialog" aria-labelledby="stage-label-title"><div class="dialog-heading"><h2 id="stage-label-title">修改看板列名称</h2><button class="icon-button" data-close="stage-label-dialog" aria-label="关闭列名称窗口"><i data-icon="x"></i></button></div><form id="stage-label-form"><div class="dialog-body"><label class="field">显示名称<input id="stage-label-input" required maxlength="30"></label><p class="section-description">只调整看板显示名称，岗位实际阶段保持原含义。</p></div><div class="dialog-footer"><button class="button" type="button" id="stage-label-reset">恢复默认</button><button class="button primary" type="submit">保存名称</button></div></form></dialog>
   <dialog id="resume-edit-dialog" class="confirm-dialog" aria-labelledby="resume-edit-title"><div class="dialog-heading"><div><h2 id="resume-edit-title">重命名简历</h2><p>给不同投递方向取一个好辨认的名称。</p></div><button class="icon-button" data-close="resume-edit-dialog" aria-label="关闭简历命名窗口"><i data-icon="x"></i></button></div><form id="resume-edit-form"><div class="dialog-body"><label class="field">简历名称<input id="resume-edit-name" required maxlength="100" autocomplete="off"></label><p class="form-error" id="resume-edit-error" role="alert" hidden></p></div><div class="dialog-footer"><button type="button" class="button" data-close="resume-edit-dialog">取消</button><button type="submit" class="button primary" id="resume-edit-save">保存名称</button></div></form></dialog>
   <dialog id="resume-remove-dialog" class="confirm-dialog" aria-labelledby="resume-remove-title"><div class="dialog-heading"><h2 id="resume-remove-title">删除这份简历？</h2><button class="icon-button" data-close="resume-remove-dialog" aria-label="关闭简历删除窗口"><i data-icon="x"></i></button></div><div class="dialog-body"><p id="resume-remove-message"></p><p class="form-error" id="resume-remove-error" role="alert" hidden></p></div><div class="dialog-footer"><button type="button" class="button" data-close="resume-remove-dialog">保留简历</button><button class="button danger" id="resume-remove-confirm">确认删除</button></div></dialog>
   <input type="file" id="import-job-file" accept="application/json,.json" hidden>
