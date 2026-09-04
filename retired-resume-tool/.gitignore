@@ -1,6 +1,0 @@
-data/
-__pycache__/
-*.log
-.runtime.json
-.playwright-cli/
-qa-output/
