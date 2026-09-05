@@ -25,7 +25,9 @@ function extractOfferTrackJob(selectionOnly) {
   if (selectionOnly && !selection) throw new Error('请先在岗位页面选中岗位介绍文字，再点击“读取选中文字”。');
   const candidateSelectors = ['[itemprop="description"]', '.job-description', '.job-detail-description', '.job-detail', '.job-details', '.job_detail', '.job-info', '.job-sec-text', '[data-testid="job-description"]', '[class*="jobDescription"]', '[class*="job-description"]', '[class*="jobDetail"]', 'main', 'article'];
   const blocks = [...new Set(candidateSelectors.flatMap(s => [...document.querySelectorAll(s)]))].filter(visible);
-  const jobSignal = /岗位职责|职位描述|岗位描述|任职要求|职位要求|招聘要求|工作职责|job description|responsibilities|qualifications/i;
+  const jobSignal = /岗位职责|职位描述|岗位描述|职位职责|任职要求|职位要求|招聘要求|工作职责|职位介绍|job description|responsibilities|qualifications/i;
+  const jdStopLine = /^(?:推荐职位|相关职位|相似职位|猜你喜欢|公司介绍|关于我们|隐私政策|竞争力分析|工作地点|单位信息|联系方式|related jobs)\s*$/i;
+  const jdNoise = /(?:如遇|若有).{0,16}收费|谨防上当受骗|拨打热线电话|免费提供发岗位|^更新于\s*20\d{2}/;
   const scored = blocks.map(el => ({ el, text: textOf(el) })).filter(x => x.text.length > 30 && jobSignal.test(x.text));
   scored.sort((a, b) => {
     const score = x => Math.min(x.text.length, 6000) / 6000 + (/岗位职责|工作职责|responsibilities/i.test(x.text) ? 2 : 0) + (/任职要求|招聘要求|qualifications/i.test(x.text) ? 2 : 0) - (x.el.matches('main,article') ? 0.5 : 0);
@@ -102,12 +104,13 @@ function extractOfferTrackJob(selectionOnly) {
   job.role ||= field('岗位名称|职位名称|招聘岗位|招聘职位|岗位|职位|job title|position');
   job.city ||= field('工作城市|工作地点|工作地区|工作地址|招聘城市|工作所在地|城市|地点|location|job location');
   if (!selectionOnly) {
-    job.role ||= first(['[itemprop="title"]', '.job-name h1', '.job-title', '[data-testid="job-title"]', '[class*="jobTitle"]', 'h1']);
+    job.role ||= first(['[itemprop="title"]', '.job-name h1', '.job-title', '[data-testid="job-title"]', '[class*="jobTitle"]', 'h1', '.title-section .title']);
     job.company ||= first(['[itemprop="hiringOrganization"] [itemprop="name"]', '.company-name', '.company-title', '[data-testid="company-name"]', '[class*="companyName"]']);
     job.city ||= first(['[itemprop="addressLocality"]', '.job-location', '[data-testid="job-location"]']);
-    // A title can identify the role; only use a clear recruitment suffix for a company.
-    const titleParts = document.title.split(/\s+[|｜\-–—]\s+|[|｜]/).map(clean).filter(Boolean);
-    if (!job.role && titleParts.length > 1) job.role = titleParts[0];
+    // A title can identify the role; separators count with or without surrounding spaces (国聘 uses 岗位-公司-平台).
+    const titleParts = document.title.split(/[|｜]|[-–—](?![A-Za-z0-9])|(?<![A-Za-z0-9])[-–—]/).map(clean).filter(Boolean);
+    const textParts = titleParts.filter(p => /[\u4e00-\u9fa5A-Za-z]/.test(p));
+    if (!job.role && textParts.length > 1) job.role = textParts[0];
     if (!job.company) {
       const companyTitle = titleParts.find(p => /.+(?:校园招聘|人才招聘|招聘官网|招聘网站)$/.test(p));
       if (companyTitle) job.company = companyTitle.replace(/(?:校园招聘|人才招聘|招聘官网|招聘网站)$/, '').trim();
@@ -149,10 +152,31 @@ function extractOfferTrackJob(selectionOnly) {
       const start = lines.findIndex(line => jobSignal.test(line));
       if (start >= 0) {
         const tail = lines.slice(start);
-        const end = tail.findIndex((line, i) => i > 0 && /^(推荐职位|相关职位|相似职位|猜你喜欢|公司介绍|关于我们|隐私政策|related jobs)$/i.test(line));
+        const end = tail.findIndex((line, i) => i > 0 && jdStopLine.test(line));
         job.jd = tail.slice(0, end < 0 ? undefined : end).join('\n');
+      } else {
+        // No signal words anywhere: fall back to the most descriptive job block, still trimmed below.
+        const widest = blocks
+          .filter(el => !el.matches('main,article') && !jobSignal.test(textOf(el)))
+          .map(el => ({ el, text: textOf(el) }))
+          .filter(x => x.text.length > 30)
+          .sort((a, b) => b.text.length - a.text.length)[0];
+        if (widest) {
+          job.jd = readable(widest.el);
+          warnings.push('页面没有岗位职责类关键词，已按岗位区块提取 JD，请核对内容。');
+        }
       }
     }
+  }
+  // Trim section headings after the JD, platform boilerplate, and start at the first signal line when present.
+  if (job.jd && !selectionOnly) {
+    const rows = job.jd.split('\n').map(clean).filter(Boolean);
+    const begin = rows.findIndex(row => jobSignal.test(row));
+    const start = begin > 0 ? begin : 0;
+    const stopAt = rows.findIndex(row => jdStopLine.test(row));
+    const end = stopAt > start ? stopAt : rows.length;
+    const kept = rows.slice(start, end).filter(row => !jdNoise.test(row));
+    job.jd = (kept.length ? kept : rows.filter(row => !jdNoise.test(row))).join('\n');
   }
   if (!job.majors) {
     const majorLines = job.jd.split(/\n|[。；;]/).filter(line => /(?:相关)?专业/.test(line) && !/专业技能|专业知识|专业能力|专业精神|专业培训/.test(line));

@@ -5,6 +5,12 @@
   let capture = null, reading = false, resumeVersions = [];
   const resumeControl = OfferTrackFields.resumeControl($('resume-version'), $('resume-editor'), $('resume-name'), $('add-resume'), $('apply-resume'));
   const status = (text, error = false) => { $('status').textContent = text; $('status').className = error ? 'error' : ''; };
+  const sendError = message => {
+    const el = $('send-error');
+    el.textContent = message || '';
+    el.hidden = !message;
+    if (message) el.scrollIntoView({ block: 'nearest' });
+  };
   function dashboardURL() {
     let url;
     try { url = new URL($('dashboard-url').value.trim()); } catch { throw new Error('请填写完整的本地工作台地址。'); }
@@ -14,6 +20,7 @@
   }
   function showCapture(value) {
     capture = value;
+    sendError('');
     $('preview').reset();
     OfferTrackFields.choose($('job-type'), OfferTrackFields.jobTypes, value.job.jobType || '', '请选择岗位类型');
     resumeControl.set(value.job.resumeVersion || '', resumeVersions);
@@ -81,24 +88,25 @@
     catch (error) { status(error.message, true); }
   });
   $('preview').addEventListener('submit', async event => {
-    event.preventDefault(); $('send').disabled = true;
+    event.preventDefault(); $('send').disabled = true; sendError('');
     try {
       const url = dashboardURL();
       const data = await remember();
       await chrome.storage.local.set({ dashboardUrl: url.href });
       const result = await deliverOfferTrackJob(url.href, data);
       status(result.reused ? '已切换到打开的工作台，请核对并保存。' : '已打开工作台，请核对表单并点击“保存岗位”。');
-    } catch (error) { status(error.message, true); }
+    } catch (error) { status(error.message, true); sendError(error.message); }
     finally { $('send').disabled = false; }
   });
   $('download').addEventListener('click', async () => {
     try {
+      sendError('');
       const data = await remember();
       const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' }));
       const link = document.createElement('a'); link.href = url; link.download = 'OfferTrack-岗位采集.json'; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
       status('岗位文件已生成，在工作台点击“导入岗位”即可填入表单。');
-    } catch (error) { status(error.message, true); }
+    } catch (error) { status(error.message, true); sendError(error.message); }
   });
   (async () => {
     try {
