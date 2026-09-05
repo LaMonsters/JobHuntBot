@@ -151,8 +151,20 @@ globalThis.OfferTrackWorkspace = (() => {
     const link = document.createElement('a'); link.href = url; link.download = `OfferTrack-投递记录-${A.key(new Date())}.csv`; document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000); host.toast(`已导出当前筛选的 ${records.length} 条记录`);
   }
+  let libraryTimer;
+  function loadJobLibrary(force = false) {
+    const frame = $('job-library-frame');
+    if (frame.hasAttribute('src') && !force) return;
+    clearTimeout(libraryTimer);
+    $('job-library-status').textContent = '正在连接飞书表格…';
+    frame.src = frame.dataset.src;
+    libraryTimer = setTimeout(() => { $('job-library-status').textContent = '若加载较慢，可重新加载或在飞书打开'; }, 20000);
+  }
   function init(options) {
     host = options;
+    $('job-library-reload').addEventListener('click', () => loadJobLibrary(true));
+    $('job-library-frame').addEventListener('load', () => { clearTimeout(libraryTimer); $('job-library-status').textContent = '内容由飞书在线提供'; });
+    $('job-library-frame').addEventListener('error', () => { clearTimeout(libraryTimer); $('job-library-status').textContent = '连接未完成，请重新加载或在飞书打开'; });
     try {
       const saved = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
       view = saved.view === 'table' ? 'table' : 'board';
@@ -179,8 +191,8 @@ globalThis.OfferTrackWorkspace = (() => {
     $('calendar-today').addEventListener('click', () => { month = new Date(new Date().getFullYear(), new Date().getMonth(), 1); calendarDay = A.key(new Date()); renderCalendar(); });
     for (const [id, amount] of [['review-prev', -1], ['review-next', 1]]) $(id).addEventListener('click', () => { weekOffset += amount; renderReview(); });
     $('review-this-week').addEventListener('click', () => { weekOffset = 0; renderReview(); });
-    window.addEventListener('hashchange', () => { const name = location.hash.slice(1); if (['overview', 'applications', 'resumes', 'review'].includes(name)) host.setNav(name); });
+    window.addEventListener('hashchange', () => { const name = location.hash.slice(1); if (['overview', 'applications', 'resumes', 'review', 'job-library'].includes(name)) host.setNav(name); });
     render(host.getRecords()); host.renderTable();
   }
-  return { init, validate, prepare, matches, render, renderList, formHistory, exportCSV, resetQuick() { quick = 'all'; }, navigate(name) { document.body.dataset.page = name; $('page-title').textContent = name === 'applications' ? '我的投递' : '我的秋招工作台'; } };
+  return { init, validate, prepare, matches, render, renderList, formHistory, exportCSV, resetQuick() { quick = 'all'; }, navigate(name) { document.body.dataset.page = name; if (name === 'job-library') loadJobLibrary(); $('page-title').textContent = name === 'applications' ? '我的投递' : '我的秋招工作台'; } };
 })();

@@ -59,7 +59,7 @@ let server, browser;
     const quickCount = async (filter, count) => { await page.locator(`[data-quick="${filter}"]`).click(); assert.equal(await page.locator('.job-card').count(), count, filter); };
     await page.goto(base + '/dashboard.html');
     await page.waitForFunction(() => document.querySelector('#overview-total-jobs').textContent === '5');
-    assert.equal(await page.locator('.sidebar>.nav').first().getByRole('button').count(), 5);
+    assert.equal(await page.locator('.sidebar>.nav').first().getByRole('button').count(), 6);
     assert.equal(await page.locator('#stat-total').innerText(), '4');
     assert.equal(await page.locator('#overview-deadline-count').innerText(), '1 个');
     assert.equal(await page.locator('#overview-todo-count').innerText(), '3 项');

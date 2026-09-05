@@ -223,11 +223,12 @@
   function resetFilters(nextFilter = 'all') { filter = nextFilter; query = ''; $('search').value = ''; $('city-filter').value = ''; $('stage-filter').value = ''; OfferTrackWorkspace.resetQuick(); renderTable(); }
   function setNav(name) {
     name = name === 'schedule' ? 'overview' : name === 'offers' ? 'applications' : name;
-    if (!['overview', 'applications', 'resumes', 'review'].includes(name)) name = 'overview';
+    if (!['overview', 'applications', 'resumes', 'review', 'job-library'].includes(name)) name = 'overview';
     document.querySelectorAll('button[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === name); if (el.dataset.nav === name) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
-    $('dashboard-content').hidden = ['resumes', 'review'].includes(name);
+    $('dashboard-content').hidden = ['resumes', 'review', 'job-library'].includes(name);
     $('resume-manager').hidden = name !== 'resumes';
     $('review-panel').hidden = name !== 'review';
+    $('job-library-panel').hidden = name !== 'job-library';
     OfferTrackWorkspace.navigate(name);
     if (name === 'resumes') OfferTrackResumes.open();
     if (!location.hash.startsWith('#offertrack-import=')) history.replaceState(null, '', '#' + name);
@@ -418,7 +419,7 @@
       if (nav === 'schedule') { selectedDay = ''; renderSchedule(); scrollToSection('schedule'); }
       if (nav === 'offers') { resetFilters('offer'); scrollToSection('applications'); }
       if (nav === 'resumes') scrollToSection('main');
-      if (nav === 'review') scrollToSection('main');
+      if (nav === 'review' || nav === 'job-library') scrollToSection('main');
       return;
     }
     if (target.dataset.stat) {
