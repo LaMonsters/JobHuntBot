@@ -243,6 +243,8 @@
   }
   document.querySelectorAll('dialog').forEach(dialog => {
     dialog.addEventListener('close', () => { if (!document.querySelector('dialog[open]')) document.body.classList.remove('modal-open'); if (dialog.id === 'confirm-dialog') pendingConfirmation = null; });
+    // Keep the job form open during text selection and backdrop clicks; Escape still works.
+    if (dialog.id === 'record-dialog') return;
     dialog.addEventListener('click', e => { if (e.target === dialog) { const rect = dialog.getBoundingClientRect(); if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) closeDialog(dialog.id); } });
   });
   function openRecord(id) {

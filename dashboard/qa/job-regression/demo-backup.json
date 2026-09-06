@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "exportedAt": "2026-09-04T12:29:12.538Z",
+  "records": [
+    {
+      "id": "b5d40265-8939-4b9b-87dd-2e5549483368",
+      "company": "星禾科技",
+      "role": "前端开发工程师",
+      "city": "杭州",
+      "appliedDate": "2026-09-02",
+      "stage": "interview1",
+      "eventTitle": "技术一面 · 线上",
+      "eventAt": "2026-09-05T14:00",
+      "nextAction": "梳理项目难点，准备自我介绍",
+      "isDemo": true
+    },
+    {
+      "id": "7d4bf575-0ac6-4ad1-b026-872253d049c4",
+      "company": "云屿网络",
+      "role": "产品经理",
+      "city": "上海",
+      "appliedDate": "2026-09-01",
+      "stage": "test",
+      "eventTitle": "线上笔试",
+      "eventAt": "2026-09-06T19:00",
+      "nextAction": "完成一套行测与产品分析练习",
+      "isDemo": true
+    },
+    {
+      "id": "407a3b7f-b784-45bf-8a00-fbc430df5788",
+      "company": "知行数据",
+      "role": "数据分析师",
+      "city": "深圳",
+      "appliedDate": "2026-08-30",
+      "stage": "hr",
+      "eventTitle": "HR 面试 · 线上",
+      "eventAt": "2026-09-08T10:30",
+      "nextAction": "整理实习成果，准备职业规划",
+      "isDemo": true
+    },
+    {
+      "id": "2335aae0-5dbb-4160-9528-d8488231c287",
+      "company": "北辰智造",
+      "role": "嵌入式软件工程师",
+      "city": "南京",
+      "appliedDate": "2026-08-29",
+      "stage": "screening",
+      "eventTitle": "",
+      "eventAt": "",
+      "nextAction": "关注邮箱，等待简历筛选结果",
+      "isDemo": true
+    },
+    {
+      "id": "64156632-e5b4-4c5c-8c35-b169767549c5",
+      "company": "远川科技",
+      "role": "后端开发工程师",
+      "city": "北京",
+      "appliedDate": "2026-08-28",
+      "stage": "interview2",
+      "eventTitle": "技术二面 · 线上",
+      "eventAt": "2026-09-10T15:00",
+      "nextAction": "复习系统设计与数据库优化",
+      "isDemo": true
+    },
+    {
+      "id": "82a7a2bf-cc39-44cb-8644-c0799eb9341a",
+      "company": "光年互动",
+      "role": "用户体验设计师",
+      "city": "杭州",
+      "appliedDate": "2026-08-27",
+      "stage": "applied",
+      "eventTitle": "",
+      "eventAt": "",
+      "nextAction": "完善作品集中的设计思考",
+      "isDemo": true
+    },
+    {
+      "id": "eff870fe-7154-414b-aa3b-b49d3685954a",
+      "company": "沐光数字",
+      "role": "产品运营管培生",
+      "city": "上海",
+      "appliedDate": "2026-08-25",
+      "stage": "offer",
+      "eventTitle": "",
+      "eventAt": "",
+      "nextAction": "确认入职时间与 Offer 细节",
+      "isDemo": true
+    },
+    {
+      "id": "cc0136de-0f79-4d9a-8380-f1478fd3aefb",
+      "company": "森屿科技",
+      "role": "内容运营",
+      "city": "成都",
+      "appliedDate": "2026-08-23",
+      "stage": "rejected",
+      "eventTitle": "",
+      "eventAt": "",
+      "nextAction": "复盘面试问题，沉淀经验",
+      "isDemo": true
+    }
+  ]
+}

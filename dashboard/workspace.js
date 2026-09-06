@@ -89,7 +89,27 @@ globalThis.OfferTrackWorkspace = (() => {
   }
   function trend(id, days) {
     const max = Math.max(1, ...days.map(item => item.count));
-    $(id).innerHTML = days.map(item => `<div class="week-bar" aria-label="${item.date} ${item.label}，${item.count} 份投递"><strong>${item.count}</strong><div class="week-bar-track"><i style="height:${item.count / max * 100}%"></i></div><span>${item.label}</span><small>${item.date.slice(5).replace('-', '/')}</small></div>`).join('');
+    const magnitude = 10 ** Math.floor(Math.log10(max / 4));
+    const step = Math.max(1, [1, 2, 5, 10].find(value => value * magnitude >= max / 4) * magnitude);
+    const ceiling = step * 4, today = A.key(new Date());
+    const points = days.map((item, index) => ({ ...item, x: index / (days.length - 1) * 100, y: 100 - item.count / ceiling * 100 }));
+    const ticks = Array.from({ length: 5 }, (_, index) => ({ y: index * 25, count: ceiling - index * step }));
+    const line = points.map(point => `${point.x},${point.y}`).join(' ');
+    const summary = days.map(item => `${item.date} ${item.label}，${item.count} 份投递`).join('；');
+    $(id).setAttribute('role', 'img');
+    $(id).setAttribute('aria-label', `每日投递量折线图。${summary}`);
+    $(id).innerHTML = `<div class="trend-chart" aria-hidden="true">
+      <div class="trend-y-axis">${ticks.map(tick => `<span style="top:${tick.y}%">${tick.count}</span>`).join('')}</div>
+      <div class="trend-plot">
+        <svg class="trend-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="${id}-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3478f6" stop-opacity=".18"/><stop offset="100%" stop-color="#3478f6" stop-opacity=".02"/></linearGradient></defs>
+          ${ticks.map(tick => `<line class="trend-grid${tick.count === 0 ? ' trend-baseline' : ''}" x1="0" y1="${tick.y}" x2="100" y2="${tick.y}" vector-effect="non-scaling-stroke"/>`).join('')}
+          <polygon points="0,100 ${line} 100,100" fill="url(#${id}-fill)"/>
+          <polyline class="trend-line" points="${line}" vector-effect="non-scaling-stroke"/>
+        </svg>
+        ${points.map(point => `<div class="trend-point${point.date === today ? ' is-today' : ''}" style="left:${point.x}%;top:${point.y}%" title="${esc(point.date)} ${esc(point.label)} · ${point.count} 份投递"><strong class="trend-count">${point.count}</strong><i class="trend-dot"></i></div>`).join('')}
+      </div>
+    </div><div class="trend-days" aria-hidden="true">${points.map(point => `<div class="trend-day${point.date === today ? ' is-today' : ''}" style="left:${point.x}%"><span>${point.label}</span><small>${point.date.slice(5).replace('-', '/')}</small></div>`).join('')}</div>`;
   }
   function action(record, text, kind = '') {
     return `<button class="action-item ${kind}" data-edit="${esc(record.id)}"><span><strong>${esc(record.company)} · ${esc(record.role)}</strong><small>${esc(text)}</small></span><span aria-hidden="true">↗</span></button>`;
