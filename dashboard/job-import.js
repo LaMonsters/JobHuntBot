@@ -30,10 +30,13 @@ globalThis.OfferTrackImport = (() => {
       return url.href;
     } catch { return ''; }
   }
-  function duplicate(records, job) {
+  const norm = s => String(s || '').trim().toLocaleLowerCase().replace(/\s+/g, '');
+  // Company + role is enough to count as a duplicate: the same opening is often posted
+  // in several cities, and a mistyped city must not silence the warning.
+  function duplicate(records, job, excludeId = '') {
     const source = canonical(job.sourceUrl);
-    const norm = s => String(s || '').trim().toLocaleLowerCase().replace(/\s+/g, '');
-    return records.find(r => !r.isDemo && ((source && canonical(r.sourceUrl) === source) || (job.company && job.role && norm(r.company) === norm(job.company) && norm(r.role) === norm(job.role) && norm(r.city) === norm(job.city))));
+    return records.find(r => r.id !== excludeId && !r.isDemo && ((source && r.sourceUrl && canonical(r.sourceUrl) === source) || (job.company && job.role && norm(r.company) === norm(job.company) && norm(r.role) === norm(job.role))));
   }
-  return { limits, validate, validURL, duplicate };
+  const sameCompany = (a, b) => Boolean(norm(a)) && norm(a) === norm(b);
+  return { limits, validate, validURL, duplicate, sameCompany };
 })();

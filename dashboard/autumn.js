@@ -83,23 +83,11 @@
     return next;
   }
   function demoRecords() {
-    const templates = [
-      ['星禾科技', '前端开发工程师', '杭州', -2, 'interview1', '技术一面 · 线上', 1, '14:00', '梳理项目难点，准备自我介绍'],
-      ['云屿网络', '产品经理', '上海', -3, 'test', '线上笔试', 2, '19:00', '完成一套行测与产品分析练习'],
-      ['知行数据', '数据分析师', '深圳', -5, 'hr', 'HR 面试 · 线上', 4, '10:30', '整理实习成果，准备职业规划'],
-      ['北辰智造', '嵌入式软件工程师', '南京', -6, 'screening', '', null, '', '关注邮箱，等待简历筛选结果'],
-      ['远川科技', '后端开发工程师', '北京', -7, 'interview2', '技术二面 · 线上', 6, '15:00', '复习系统设计与数据库优化'],
-      ['光年互动', '用户体验设计师', '杭州', -8, 'applied', '', null, '', '完善作品集中的设计思考'],
-      ['沐光数字', '产品运营管培生', '上海', -10, 'offer', '', null, '', '确认入职时间与 Offer 细节'],
-      ['森屿科技', '内容运营', '成都', -12, 'rejected', '', null, '', '复盘面试问题，沉淀经验']
-    ];
-    return templates.map(([company, role, city, days, stage, eventTitle, eventDay, time, nextAction]) => ({
-      id: uid(), company, role, city, appliedDate: dateKey(offsetDate(days)), stage, eventTitle,
-      eventAt: eventDay === null ? '' : `${dateKey(offsetDate(eventDay))}T${time}`, nextAction, isDemo: true
-    }));
+    // The share build intentionally starts with no sample or personal records.
+    return [];
   }
   let records = [], revision = null, filter = 'all', query = '', selectedDay = '', editingId = null, editSnapshot = null;
-  let pendingConfirmation = null, toastTimer, undoAction = null, importingJob = false;
+  let pendingConfirmation = null, toastTimer, undoAction = null, formDirty = false;
   function storageError(message) {
     $('storage-error').textContent = message;
     $('storage-error').hidden = false;
@@ -252,12 +240,14 @@
     editingId = existing?.id || null;
     editSnapshot = existing ? JSON.stringify(existing) : null;
     $('record-form').reset();
-    importingJob = false;
+    formDirty = false;
     $('job-import-notice').hidden = true;
     $('job-duplicate').hidden = true;
+    $('job-company-hint').hidden = true;
     $('form-error').hidden = true;
     $('record-title').textContent = existing ? '编辑岗位信息' : '岗位信息';
     $('save-button-label').textContent = existing ? '保存修改' : '保存岗位';
+    $('allow-duplicate-label').textContent = existing ? '我知道可能重复，仍要保存修改' : '我确认要另外新增一条';
     const values = existing || { appliedDate: '', stage: 'planned' };
     prepareJobSelects(values);
     for (const [key, value] of Object.entries(values)) {
@@ -273,6 +263,20 @@
     showDialog('record-dialog');
     $('field-company').focus();
   }
+  // Warn about an existing record while typing, unless company, role and link are all
+  // untouched: saving such an edit would not create a new duplicate pair. A second
+  // opening at the same company only gets an informational hint, never a block.
+  function updateDuplicateNotice(job) {
+    const existing = editingId ? records.find(r => r.id === editingId) : null;
+    const unchanged = existing && existing.company === job.company && existing.role === job.role && existing.sourceUrl === job.sourceUrl;
+    const match = unchanged ? null : OfferTrackImport.duplicate(records, job, editingId);
+    $('job-duplicate').hidden = !match;
+    if (match) $('duplicate-message').textContent = `这个岗位可能已经记录过了：已有“${match.company} · ${match.role}”（${match.city || '城市未填'} · ${STAGES[match.stage]}）。`;
+    const siblings = !match && job.company ? records.filter(r => r.id !== editingId && !r.isDemo && OfferTrackImport.sameCompany(r.company, job.company)) : [];
+    $('job-company-hint').hidden = !siblings.length;
+    if (siblings.length) $('job-company-hint').textContent = `这家公司还有 ${siblings.length} 个在跟岗位：${siblings.slice(0, 3).map(r => `${r.role}（${STAGES[r.stage]}）`).join('、')}${siblings.length > 3 ? ' 等' : ''}。如果是不同岗位，直接保存即可。`;
+    return match;
+  }
   function syncJobFields() {
     const planned = $('field-stage').value === 'planned';
     $('field-date').required = !planned;
@@ -283,14 +287,13 @@
     $('job-source-link').hidden = !url || !OfferTrackImport.validURL(url);
     if (!$('job-source-link').hidden) $('job-source-link').href = url;
     else $('job-source-link').removeAttribute('href');
-    if (importingJob) $('job-duplicate').hidden = !OfferTrackImport.duplicate(records, Object.fromEntries(new FormData($('record-form'))));
+    updateDuplicateNotice(Object.fromEntries(new FormData($('record-form'))));
   }
   function importJob(data) {
     const job = OfferTrackImport.validate(data);
     const fill = () => {
       if ($('record-dialog').open) closeDialog('record-dialog');
       openRecord();
-      importingJob = true;
       prepareJobSelects(job);
       for (const [key, value] of Object.entries(job)) $('record-form').elements.namedItem(key).value = value;
       OfferTrackResumes.refreshSelect(job);
@@ -335,10 +338,15 @@
   }
   // Native validation must be able to focus a field inside a collapsed section.
   $('record-form').addEventListener('invalid', event => { const details = event.target.closest('details'); if (details) details.open = true; }, true);
-  $('record-form').addEventListener('input', syncJobFields);
+  $('record-form').addEventListener('input', () => { formDirty = true; syncJobFields(); });
+  $('record-form').addEventListener('change', () => { formDirty = true; });
   $('open-existing').addEventListener('click', () => {
-    const match = OfferTrackImport.duplicate(records, Object.fromEntries(new FormData($('record-form'))));
-    if (match) { closeDialog('record-dialog'); openRecord(match.id); }
+    const match = updateDuplicateNotice(Object.fromEntries(new FormData($('record-form'))));
+    if (!match) return;
+    const open = () => { closeDialog('record-dialog'); openRecord(match.id); };
+    // Editing in progress: do not silently discard unsaved changes.
+    if (editingId && formDirty) confirmAction('放弃当前修改？', '这条记录未保存的修改会被丢弃，然后打开已有的记录。', '查看已有记录', open, false);
+    else open();
   });
   window.addEventListener('hashchange', importFromHash);
   function toast(message, undo) {
@@ -381,15 +389,15 @@
       raw.favorite = $('field-favorite').checked;
       raw.matchScore = raw.matchScore === '' ? null : Number(raw.matchScore);
       const record = validateRecord(OfferTrackWorkspace.prepare({ ...existing, ...raw, ...OfferTrackResumes.binding(raw.resumeVersion), id: editingId || uid(), isDemo: existing?.isDemo || false }, existing));
-      if (importingJob && !$('allow-duplicate').checked && OfferTrackImport.duplicate(records, record)) {
-        $('job-duplicate').hidden = false;
-        throw new Error('这个岗位已有记录。请查看已有记录，或勾选“我确认要另外新增一条”。');
+      if (!$('allow-duplicate').checked && updateDuplicateNotice(record)) {
+        throw new Error(`这个岗位已有记录。请查看已有记录，或勾选“${$('allow-duplicate-label').textContent}”后再保存。`);
       }
       const next = editingId ? records.map(r => r.id === editingId ? record : r) : [...records, record];
       if (!saveRecords(next)) throw new Error($('storage-error').textContent);
       const wasEditing = !!editingId;
+      const siblings = wasEditing ? [] : records.filter(r => r.id !== record.id && !r.isDemo && OfferTrackImport.sameCompany(r.company, record.company));
       closeDialog('record-dialog'); resetFilters(); setNav('applications');
-      toast(wasEditing ? '投递进展已更新' : record.stage === 'planned' ? '岗位已收藏，完成网申后可更新为已投递' : '已添加新投递，祝你收获好消息');
+      toast(wasEditing ? '投递进展已更新' : siblings.length ? `已添加新投递 · 这家公司还有 ${siblings.length} 个在跟岗位` : record.stage === 'planned' ? '岗位已收藏，完成网申后可更新为已投递' : '已添加新投递，祝你收获好消息');
     } catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; }
   });
   $('confirm-button').addEventListener('click', () => { const action = pendingConfirmation; closeDialog('confirm-dialog'); action?.(); });

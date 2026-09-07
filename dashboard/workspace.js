@@ -174,6 +174,11 @@ globalThis.OfferTrackWorkspace = (() => {
   let libraryTimer;
   function loadJobLibrary(force = false) {
     const frame = $('job-library-frame');
+    if (!frame.dataset.src) {
+      clearTimeout(libraryTimer);
+      $('job-library-status').textContent = '空白分享版未配置在线岗位表';
+      return;
+    }
     if (frame.hasAttribute('src') && !force) return;
     clearTimeout(libraryTimer);
     $('job-library-status').textContent = '正在连接飞书表格…';

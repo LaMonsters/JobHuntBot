@@ -1,5 +1,14 @@
 # JobHuntBot
 
+## 秋招工作台 · 2026-09-07 分享版
+
+当前仓库的运行文件已与分享版 `OfferTrack-20260907.zip` 同步：首次使用投递记录与简历库为空，包含飞书岗位信息库、岗位采集插件和 Windows 启动入口。仓库另外保留开发说明、模板及测试资料。
+
+- **直接使用**：[下载分享压缩包](https://github.com/LaMonsters/JobHuntBot/releases/download/share-20260907/OfferTrack-20260907.zip)，解压后阅读 [使用说明.txt](使用说明.txt)。
+- **从源码运行**：安装 Node.js 后，双击根目录的 `启动秋招工作台.bat`，访问 `http://localhost:8420/dashboard.html`。
+- **飞书岗位信息库**：在侧边栏进入，表格需联网且受原有访问权限限制；在线岗位不会自动写入个人投递记录。
+- **数据备份**：岗位记录通过页面导出 JSON；PDF 简历单独保存在 `dashboard/.resume-data/`。下面的原版工作流介绍供开发与扩展参考。
+
 > **本地秋招基础版（OfferTrack）**：直接双击 `dashboard/dashboard.html` 即可使用新的蓝白风格工作台，支持投递记录增删改、统计、一周安排和备份恢复。详细说明见 [dashboard/使用说明.md](dashboard/使用说明.md)。原 CSV 看板保存在 `dashboard/dashboard-legacy.html`；下方原版文档中的 CSV 操作与服务器要求适用于该旧版。新基础版保存到当前浏览器，与 CSV 不自动同步。
 
 **English** below · [中文](#中文说明) 在下方

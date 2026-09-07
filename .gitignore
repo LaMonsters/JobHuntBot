@@ -4,4 +4,12 @@ Thumbs.db
 dashboard/.resume-data/
 dashboard/.playwright-cli/
 dashboard/*.csv
+# The following files are empty starter headers in this release.
+!dashboard/application_log.csv
+!dashboard/automation_rules.csv
+!dashboard/blocker_queue.csv
+!dashboard/daily_dashboard.csv
+!dashboard/follow_up.csv
+!dashboard/job_pool.csv
+!dashboard/resume_rules.csv
 /*.zip
